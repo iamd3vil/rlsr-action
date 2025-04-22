@@ -1,0 +1,82 @@
+name: 'Run Rlsr'
+description: 'Downloads and runs the latest Rlsr release tool using the official install.sh script. Supports Linux (x86_64) and macOS (arm64).'
+author: 'iamd3vil'
+
+inputs:
+  config-path:
+    description: 'Path to the rlsr configuration file (e.g., rlsr.yml, config/rlsr.toml).'
+    required: true
+    default: 'rlsr.yml'
+  # rlsr-version input removed as install.sh only fetches latest
+  github-token:
+    description: 'GitHub token for publishing releases. Usually ${{ secrets.GITHUB_TOKEN }}. Required for GitHub target.'
+    required: true
+  skip-publish:
+    description: 'Set to "true" to run builds but skip the publishing step.'
+    required: false
+    default: 'false'
+  rm-dist:
+    description: 'Set to "true" to clean the dist folder before building.'
+    required: false
+    default: 'false'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Download and Install Latest Rlsr
+      shell: bash
+      run: |
+        # Download the install script using the specific commit hash for stability
+        INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/iamd3vil/rlsr/00ac16dd8302e244c2c2eba2447397fbfb98a2d9/install.sh"
+        echo "Downloading install script from $INSTALL_SCRIPT_URL"
+        curl -fsSL -o install_rlsr.sh "$INSTALL_SCRIPT_URL"
+        if [[ $? -ne 0 ]]; then
+          echo "Failed to download install_rlsr.sh"
+          exit 1
+        fi
+        chmod +x install_rlsr.sh
+
+        echo "Running install script (will use sudo)..."
+        # Execute the script directly. It handles download, extraction, and installation.
+        # It requires sudo to move the binary to /usr/local/bin
+        ./install_rlsr.sh
+        if [[ $? -ne 0 ]]; then
+          echo "Rlsr installation script failed."
+          echo "Ensure the runner OS/Arch is supported by the script (Linux x86_64 or macOS arm64)."
+          exit 1
+        fi
+        echo "Rlsr installation script completed successfully."
+        # No need to add to PATH, as the script installs to /usr/local/bin which is usually in PATH
+
+    - name: Verify Rlsr Installation
+      shell: bash
+      run: |
+        echo "Verifying rlsr command..."
+        # The script already verifies, but this confirms it's available for the next step
+        if ! command -v rlsr &> /dev/null; then
+            echo "Error: 'rlsr' command not found in PATH after installation."
+            exit 1
+        fi
+        echo "rlsr command found. Checking version:"
+        rlsr --version
+
+    - name: Run Rlsr
+      shell: bash
+      env:
+        # Pass the token provided by the calling workflow
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        echo "Running Rlsr..."
+        # Construct the command. 'rlsr' should be in the PATH now.
+        COMMAND="rlsr -c ${{ inputs.config-path }}"
+
+        if [[ "${{ inputs.skip-publish }}" == "true" ]]; then
+          COMMAND="$COMMAND --skip-publish"
+        fi
+
+        if [[ "${{ inputs.rm-dist }}" == "true" ]]; then
+          COMMAND="$COMMAND --rm-dist"
+        fi
+
+        echo "Executing: $COMMAND"
+        $COMMAND
