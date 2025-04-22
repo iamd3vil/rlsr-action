@@ -9,7 +9,7 @@ inputs:
     default: 'rlsr.yml'
   # rlsr-version input removed as install.sh only fetches latest
   github-token:
-    description: 'GitHub token for publishing releases. Usually ${{ secrets.GITHUB_TOKEN }}. Required for GitHub target.'
+    description: 'GitHub token for publishing releases. Usually secrets.GITHUB_TOKEN. Required for GitHub target.'
     required: true
   skip-publish:
     description: 'Set to "true" to run builds but skip the publishing step.'
