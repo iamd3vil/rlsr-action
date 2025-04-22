@@ -1,5 +1,5 @@
 name: 'Run Rlsr'
-description: 'Downloads and runs the latest Rlsr release tool using the official install.sh script. Supports Linux (x86_64) and macOS (arm64).'
+description: 'Downloads and runs the latest Rlsr release tool. Supports Linux (x86_64) and macOS (arm64).'
 author: 'iamd3vil'
 
 inputs:
