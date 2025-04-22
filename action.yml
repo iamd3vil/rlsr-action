@@ -1,28 +1,44 @@
-name: 'Run Rlsr'
-description: 'Downloads and runs the latest Rlsr release tool. Supports Linux (x86_64) and macOS (arm64).'
-author: 'iamd3vil'
+name: "Run Rlsr"
+description: "Downloads and runs the latest Rlsr release tool. Supports Linux (x86_64) and macOS (arm64)."
+author: "iamd3vil"
 
 inputs:
   config-path:
-    description: 'Path to the rlsr configuration file (e.g., rlsr.yml, config/rlsr.toml).'
+    description: "Path to the rlsr configuration file (e.g., rlsr.yml, config/rlsr.toml)."
     required: true
-    default: 'rlsr.yml'
+    default: "rlsr.yml"
   # rlsr-version input removed as install.sh only fetches latest
   github-token:
-    description: 'GitHub token for publishing releases. Usually secrets.GITHUB_TOKEN. Required for GitHub target.'
+    description: "GitHub token for publishing releases. Usually secrets.GITHUB_TOKEN. Required for GitHub target."
     required: true
   skip-publish:
     description: 'Set to "true" to run builds but skip the publishing step.'
     required: false
-    default: 'false'
+    default: "false"
   rm-dist:
     description: 'Set to "true" to clean the dist folder before building.'
     required: false
-    default: 'false'
+    default: "false"
 
 runs:
   using: "composite"
   steps:
+    - name: Ensure curl is available
+      shell: bash
+      run: |
+        if ! command -v curl &> /dev/null; then
+          echo "curl could not be found. Attempting to install..."
+          if command -v apt-get &> /dev/null; then
+            sudo apt-get update && sudo apt-get install -y curl
+          elif command -v brew &> /dev/null; then
+            brew install curl
+          else
+             echo "Error: Cannot install curl. Neither apt-get nor brew found."
+             exit 1
+          fi
+        fi
+        echo "curl is available."
+
     - name: Download and Install Latest Rlsr
       shell: bash
       run: |
